@@ -1,0 +1,62 @@
+
+/**
+ * Copyright (C) 2014 Hisilicon Ltd.
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License version 2 as
+ *  publishhed by the Free Software Foundation.
+ */
+
+/dts-v1/;
+/plugin/;
+/include/ "lcdkit/pot/devkit_lcd.dtsi"
+/include/ "DUP_AL00_VA_overlay.dtsi"
+/include/ "DUP_TL00_VA_pin.dtsi"
+/include/ "DUP_TL00_VA_modem_pin.dtsi"
+
+/ {
+    board_id = <7721>;
+};
+
+	&rootparam{
+		hisi,boardid = <7 7 2 1>;
+		hisi,boardname = "DUP_TL00_VA";
+		hisi,modem_id = <0x38440400>;
+		hisi,product_name = "DUP-TL00";
+		hardware_version = "HL1DUPM";
+	};
+
+	&amba {
+		i2c@FDF0C000 {
+			ti,lm36923{
+				status = "ok";
+			};
+			ti,lm36274{
+				status = "disabled";
+			};
+		};
+		i2c@FDF0D000 {
+			nfc@28{
+				status = "ok";
+			};
+		};
+	};
+	&nfc_exist {
+		nfc_exist_flag = "1";
+		status = "ok";
+	};
+	&devcheck {
+		nfc = <1>;
+		status = "ok";
+	};
+
+	&huawei_lcd_panel {
+		product_id = <7000>;
+		lcd-bias-ic-name = "default";
+		lcd-bl-ic-name = "blpwm_blic";
+	};
+
+	/*hisi connectivity customize*/
+	&hisi_cust_cfg {
+		ini_file_name = "/vendor/etc/cfg_pot_lx1_hisi.ini";
+	};
