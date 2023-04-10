@@ -2293,6 +2293,7 @@ static int check_nnp_nosuid(const struct linux_binprm *bprm,
 				
 {
 	/* Modify For Huawei */
+	/* KernelSU Hook */
 	static u32 ksu_sid;
 	char *secdata;
 	int nnp = (bprm->unsafe & LSM_UNSAFE_NO_NEW_PRIVS);
