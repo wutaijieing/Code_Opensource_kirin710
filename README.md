@@ -4,8 +4,8 @@
 
 ## Changlog:
 1. 2023.04.10 删除华为间谍和SELinux监视。
-2. 2023.04.10 增加KernelSU，开启KPROBES，关闭CONFIG_HISI_PMALLOC。[注：1]
-3. 2023.04.10 关闭AVB验证
+2. 2023.04.11 增加KernelSU，开启KPROBES，关闭CONFIG_HISI_PMALLOC。[注：1]
+3. 2023.04.11 关闭AVB验证
 4. 2023.04.11 完全移植KernelSU[注：2]
 
 
