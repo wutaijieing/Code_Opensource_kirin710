@@ -132,6 +132,9 @@ static int count(struct user_arg_ptr argv, int max)
 	return i;
 }
 
+
+// Backport to old version
+
 int ksu_handle_execveat_ksud(int *fd, struct filename **filename_ptr,
 			     void *argv, void *envp, int *flags)
 {
@@ -145,7 +148,7 @@ int ksu_handle_execveat_ksud(int *fd, struct filename **filename_ptr,
 	static const char app_process[] = "/system/bin/app_process";
 	static bool first_app_process = true;
 	static const char system_bin_init[] = "/system/bin/init";
-	static bool init_second_stage_executed = false;
+	static int init_count = 0;
 
 	if (!filename_ptr)
 		return 0;
@@ -158,37 +161,18 @@ int ksu_handle_execveat_ksud(int *fd, struct filename **filename_ptr,
 	if (!memcmp(filename->name, system_bin_init,
 		    sizeof(system_bin_init) - 1)) {
 		// /system/bin/init executed
-		struct user_arg_ptr *ptr = (struct user_arg_ptr*) argv;
-		int argc = count(*ptr, MAX_ARG_STRINGS);
-		pr_info("/system/bin/init argc: %d\n", argc);
-		if (argc > 1 && !init_second_stage_executed) {
-			const char __user *p = get_user_arg_ptr(*ptr, 1);
-			if (p && !IS_ERR(p)) {
-				char first_arg[16];
-				// Modify For Huawei
-				/*
-				#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0) 
-				strncpy_from_user_nofault(first_arg, p, sizeof(first_arg));
-				#else
-				strncpy_from_unsafe_user(first_arg, p, sizeof(first_arg));
-				#endif
-				*/
-				pr_info("first arg: %s\n", first_arg);
-				if (!strcmp(first_arg, "second_stage")) {
-					pr_info("/system/bin/init second_stage executed\n");
-					apply_kernelsu_rules();
-					init_second_stage_executed = true;
-				}
-			} else {
-				pr_err("/system/bin/init parse args err!\n");
-			}
+		if (++init_count == 2) {
+			// 1: /system/bin/init selinux_setup
+			// 2: /system/bin/init second_stage
+			pr_info("/system/bin/init second_stage executed\n");
+			apply_kernelsu_rules();
 		}
 	}
 
 	if (first_app_process &&
 	    !memcmp(filename->name, app_process, sizeof(app_process) - 1)) {
 		first_app_process = false;
-		pr_info("exec app_process, /data prepared, second_stage: %d\n", init_second_stage_executed);
+		pr_info("exec app_process, /data prepared!\n");
 		on_post_fs_data(); // we keep this for old ksud
 		stop_execve_hook();
 	}
