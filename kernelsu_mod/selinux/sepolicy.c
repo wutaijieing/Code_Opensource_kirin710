@@ -666,7 +666,7 @@ static bool add_type(struct policydb *db, const char *type_name, bool attr)
 
 	db->type_attr_map = new_type_attr_map;
 	/* Modify For Huawei */
-	ebitmap_init(&db->type_attr_map[value - 1],HISI_SELINUX_EBITMAP_RO);
+	ebitmap_init(&db->type_attr_map[value - 1]);
 	ebitmap_set_bit(&db->type_attr_map[value - 1], value - 1, 1);
 
 	db->type_val_to_struct = new_type_val_to_struct;
@@ -827,7 +827,7 @@ static void add_typeattribute_raw(struct policydb *db, struct type_datum *type,
 {
 	/*Modify For Huawei*/
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
-	struct ebitmap *sattr = &db->type_attr_map[type->value - 1],HISI_SELINUX_EBITMAP_RO;
+	struct ebitmap *sattr = &db->type_attr_map[type->value - 1];
 #else
 	struct ebitmap *sattr =
 		flex_array_get(db->type_attr_map_array, type->value - 1);
