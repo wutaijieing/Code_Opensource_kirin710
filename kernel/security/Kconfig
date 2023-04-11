@@ -187,17 +187,13 @@ config HISI_HARDENED_USERCOPY_REPLACE_DIVISION
 source security/selinux/Kconfig
 source security/smack/Kconfig
 source security/tomoyo/Kconfig
-source security/apparmor/Kconfig
 source security/yama/Kconfig
-
-source security/integrity/Kconfig
 
 choice
 	prompt "Default security module"
 	default DEFAULT_SECURITY_SELINUX if SECURITY_SELINUX
 	default DEFAULT_SECURITY_SMACK if SECURITY_SMACK
 	default DEFAULT_SECURITY_TOMOYO if SECURITY_TOMOYO
-	default DEFAULT_SECURITY_APPARMOR if SECURITY_APPARMOR
 	default DEFAULT_SECURITY_DAC
 
 	help
@@ -213,9 +209,6 @@ choice
 	config DEFAULT_SECURITY_TOMOYO
 		bool "TOMOYO" if SECURITY_TOMOYO=y
 
-	config DEFAULT_SECURITY_APPARMOR
-		bool "AppArmor" if SECURITY_APPARMOR=y
-
 	config DEFAULT_SECURITY_DAC
 		bool "Unix Discretionary Access Controls"
 
@@ -226,15 +219,7 @@ config DEFAULT_SECURITY
 	default "selinux" if DEFAULT_SECURITY_SELINUX
 	default "smack" if DEFAULT_SECURITY_SMACK
 	default "tomoyo" if DEFAULT_SECURITY_TOMOYO
-	default "apparmor" if DEFAULT_SECURITY_APPARMOR
 	default "" if DEFAULT_SECURITY_DAC
-
-config HISI_RO_LSM_HOOKS
-        bool "Turn into RO the LSM hooks, after kernel init is completed."
-        depends on MMU
-        default n
-        help
-          Protects the security huulks from further modifications, after init.
 
 source security/kernel_harden/Kconfig
 
