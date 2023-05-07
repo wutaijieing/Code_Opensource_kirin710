@@ -5669,6 +5669,24 @@ CONFIG_WBT=y
 # Should Disbaled
 # CONFIG_HISI_PMALLOC is not set
 # CONFIG_HISI_SELINUX_EBITMAP_RO is not set
+# CONFIG__HIVIEW_SELINUX is not set      
+# CONFIG__HISI_SELINUX_PROT is not set    
+# CONFIG__HISI_RO_LSM_HOOKS is not set    
+# CONFIG__INTEGRITY is not set      
+# CONFIG__INTEGRITY_AUDIT is not set    
+# CONFIG__HUAWEI_CRYPTO_TEST_MDPP is not set    
+# CONFIG__HUAWEI_SELINUX_DSM is not set    
+# CONFIG__HUAWEI_HIDESYMS is not set    
+# CONFIG__HW_SLUB_SANITIZE is not set    
+# CONFIG__HUAWEI_PROC_CHECK_ROOT is not set    
+# CONFIG__HW_ROOT_SCAN is not set    
+# CONFIG__HUAWEI_EIMA is not set    
+# CONFIG__HUAWEI_EIMA_ACCESS_CONTROL is not set    
+# CONFIG__HW_DOUBLE_FREE_DYNAMIC_CHECK is not set    
+# CONFIG__HKIP_ATKINFO is not set    
+# CONFIG__HW_KERNEL_STP is not set  
+# CONFIG__HISI_HHEE is not set    
+# CONFIG__HISI_HHEE_TOKEN is not set  
 
 # KernelSU
 CONFIG_KSU=y
