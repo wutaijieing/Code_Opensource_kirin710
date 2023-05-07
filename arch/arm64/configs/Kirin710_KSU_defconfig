@@ -5668,6 +5668,7 @@ CONFIG_WBT=y
 
 # Should Disbaled
 # CONFIG_HISI_PMALLOC is not set
+# CONFIG_HISI_SELINUX_EBITMAP_RO is not set
 
 # KernelSU
 CONFIG_KSU=y
