@@ -33,8 +33,8 @@ MODULE_AUTHOR("Vojtech Pavlik <vojtech@suse.cz>");
 MODULE_DESCRIPTION("Input core");
 MODULE_LICENSE("GPL");
 
-#define INPUT_MAX_CHAR_DEVICES		1024
-#define INPUT_FIRST_DYNAMIC_DEV		256
+#define INPUT_MAX_CHAR_DEVICES 1024
+#define INPUT_FIRST_DYNAMIC_DEV 256
 static DEFINE_IDA(input_ida);
 
 static LIST_HEAD(input_dev_list);
@@ -48,17 +48,18 @@ static LIST_HEAD(input_handler_list);
  */
 static DEFINE_MUTEX(input_mutex);
 
-static const struct input_value input_value_sync = { EV_SYN, SYN_REPORT, 1 };
+static const struct input_value input_value_sync = {EV_SYN, SYN_REPORT, 1};
 
 static inline int is_event_supported(unsigned int code,
-				     unsigned long *bm, unsigned int max)
+									 unsigned long *bm, unsigned int max)
 {
 	return code <= max && test_bit(code, bm);
 }
 
 static int input_defuzz_abs_event(int value, int old_val, int fuzz)
 {
-	if (fuzz) {
+	if (fuzz)
+	{
 		if (value > old_val - fuzz / 2 && value < old_val + fuzz / 2)
 			return old_val;
 
@@ -75,11 +76,12 @@ static int input_defuzz_abs_event(int value, int old_val, int fuzz)
 static void input_start_autorepeat(struct input_dev *dev, int code)
 {
 	if (test_bit(EV_REP, dev->evbit) &&
-	    dev->rep[REP_PERIOD] && dev->rep[REP_DELAY] &&
-	    dev->timer.data) {
+		dev->rep[REP_PERIOD] && dev->rep[REP_DELAY] &&
+		dev->timer.data)
+	{
 		dev->repeat_key = code;
 		mod_timer(&dev->timer,
-			  jiffies + msecs_to_jiffies(dev->rep[REP_DELAY]));
+				  jiffies + msecs_to_jiffies(dev->rep[REP_DELAY]));
 	}
 }
 
@@ -94,14 +96,16 @@ static void input_stop_autorepeat(struct input_dev *dev)
  * dev->event_lock held and interrupts disabled.
  */
 static unsigned int input_to_handler(struct input_handle *handle,
-			struct input_value *vals, unsigned int count)
+									 struct input_value *vals, unsigned int count)
 {
 	struct input_handler *handler = handle->handler;
 	struct input_value *end = vals;
 	struct input_value *v;
 
-	if (handler->filter) {
-		for (v = vals; v != vals + count; v++) {
+	if (handler->filter)
+	{
+		for (v = vals; v != vals + count; v++)
+		{
 			if (handler->filter(handle, v->type, v->code, v->value))
 				continue;
 			if (end != v)
@@ -129,7 +133,7 @@ static unsigned int input_to_handler(struct input_handle *handle,
  * dev->event_lock held and interrupts disabled.
  */
 static void input_pass_values(struct input_dev *dev,
-			      struct input_value *vals, unsigned int count)
+							  struct input_value *vals, unsigned int count)
 {
 	struct input_handle *handle;
 	struct input_value *v;
@@ -140,23 +144,29 @@ static void input_pass_values(struct input_dev *dev,
 	rcu_read_lock();
 
 	handle = rcu_dereference(dev->grab);
-	if (handle) {
+	if (handle)
+	{
 		count = input_to_handler(handle, vals, count);
-	} else {
-		list_for_each_entry_rcu(handle, &dev->h_list, d_node)
-			if (handle->open) {
-				count = input_to_handler(handle, vals, count);
-				if (!count)
-					break;
-			}
+	}
+	else
+	{
+		list_for_each_entry_rcu(handle, &dev->h_list, d_node) if (handle->open)
+		{
+			count = input_to_handler(handle, vals, count);
+			if (!count)
+				break;
+		}
 	}
 
 	rcu_read_unlock();
 
 	/* trigger auto repeat for key events */
-	if (test_bit(EV_REP, dev->evbit) && test_bit(EV_KEY, dev->evbit)) {
-		for (v = vals; v != vals + count; v++) {
-			if (v->type == EV_KEY && v->value != 2) {
+	if (test_bit(EV_REP, dev->evbit) && test_bit(EV_KEY, dev->evbit))
+	{
+		for (v = vals; v != vals + count; v++)
+		{
+			if (v->type == EV_KEY && v->value != 2)
+			{
 				if (v->value)
 					input_start_autorepeat(dev, v->code);
 				else
@@ -167,9 +177,9 @@ static void input_pass_values(struct input_dev *dev,
 }
 
 static void input_pass_event(struct input_dev *dev,
-			     unsigned int type, unsigned int code, int value)
+							 unsigned int type, unsigned int code, int value)
 {
-	struct input_value vals[] = { { type, code, value } };
+	struct input_value vals[] = {{type, code, value}};
 
 	input_pass_values(dev, vals, ARRAY_SIZE(vals));
 }
@@ -181,43 +191,44 @@ static void input_pass_event(struct input_dev *dev,
  */
 static void input_repeat_key(unsigned long data)
 {
-	struct input_dev *dev = (void *) data;
+	struct input_dev *dev = (void *)data;
 	unsigned long flags;
 
 	spin_lock_irqsave(&dev->event_lock, flags);
 
 	if (test_bit(dev->repeat_key, dev->key) &&
-	    is_event_supported(dev->repeat_key, dev->keybit, KEY_MAX)) {
-		struct input_value vals[] =  {
-			{ EV_KEY, dev->repeat_key, 2 },
-			input_value_sync
-		};
+		is_event_supported(dev->repeat_key, dev->keybit, KEY_MAX))
+	{
+		struct input_value vals[] = {
+			{EV_KEY, dev->repeat_key, 2},
+			input_value_sync};
 
 		input_pass_values(dev, vals, ARRAY_SIZE(vals));
 
 		if (dev->rep[REP_PERIOD])
 			mod_timer(&dev->timer, jiffies +
-					msecs_to_jiffies(dev->rep[REP_PERIOD]));
+									   msecs_to_jiffies(dev->rep[REP_PERIOD]));
 	}
 
 	spin_unlock_irqrestore(&dev->event_lock, flags);
 }
 
-#define INPUT_IGNORE_EVENT	0
-#define INPUT_PASS_TO_HANDLERS	1
-#define INPUT_PASS_TO_DEVICE	2
-#define INPUT_SLOT		4
-#define INPUT_FLUSH		8
-#define INPUT_PASS_TO_ALL	(INPUT_PASS_TO_HANDLERS | INPUT_PASS_TO_DEVICE)
+#define INPUT_IGNORE_EVENT 0
+#define INPUT_PASS_TO_HANDLERS 1
+#define INPUT_PASS_TO_DEVICE 2
+#define INPUT_SLOT 4
+#define INPUT_FLUSH 8
+#define INPUT_PASS_TO_ALL (INPUT_PASS_TO_HANDLERS | INPUT_PASS_TO_DEVICE)
 
 static int input_handle_abs_event(struct input_dev *dev,
-				  unsigned int code, int *pval)
+								  unsigned int code, int *pval)
 {
 	struct input_mt *mt = dev->mt;
 	bool is_mt_event;
 	int *pold;
 
-	if (code == ABS_MT_SLOT) {
+	if (code == ABS_MT_SLOT)
+	{
 		/*
 		 * "Stage" the event; we'll flush it later, when we
 		 * get actual touch data.
@@ -230,11 +241,16 @@ static int input_handle_abs_event(struct input_dev *dev,
 
 	is_mt_event = input_is_mt_value(code);
 
-	if (!is_mt_event) {
+	if (!is_mt_event)
+	{
 		pold = &dev->absinfo[code].value;
-	} else if (mt) {
+	}
+	else if (mt)
+	{
 		pold = &mt->slots[mt->slot].abs[code - ABS_MT_FIRST];
-	} else {
+	}
+	else
+	{
 		/*
 		 * Bypass filtering for multi-touch events when
 		 * not employing slots.
@@ -242,9 +258,10 @@ static int input_handle_abs_event(struct input_dev *dev,
 		pold = NULL;
 	}
 
-	if (pold) {
+	if (pold)
+	{
 		*pval = input_defuzz_abs_event(*pval, *pold,
-						dev->absinfo[code].fuzz);
+									   dev->absinfo[code].fuzz);
 		if (*pold == *pval)
 			return INPUT_IGNORE_EVENT;
 
@@ -252,7 +269,8 @@ static int input_handle_abs_event(struct input_dev *dev,
 	}
 
 	/* Flush pending "slot" event */
-	if (is_mt_event && mt && mt->slot != input_abs_get_val(dev, ABS_MT_SLOT)) {
+	if (is_mt_event && mt && mt->slot != input_abs_get_val(dev, ABS_MT_SLOT))
+	{
 		input_abs_set_val(dev, ABS_MT_SLOT, mt->slot);
 		return INPUT_PASS_TO_HANDLERS | INPUT_SLOT;
 	}
@@ -261,15 +279,17 @@ static int input_handle_abs_event(struct input_dev *dev,
 }
 
 static int input_get_disposition(struct input_dev *dev,
-			  unsigned int type, unsigned int code, int *pval)
+								 unsigned int type, unsigned int code, int *pval)
 {
 	int disposition = INPUT_IGNORE_EVENT;
 	int value = *pval;
 
-	switch (type) {
+	switch (type)
+	{
 
 	case EV_SYN:
-		switch (code) {
+		switch (code)
+		{
 		case SYN_CONFIG:
 			disposition = INPUT_PASS_TO_ALL;
 			break;
@@ -284,15 +304,18 @@ static int input_get_disposition(struct input_dev *dev,
 		break;
 
 	case EV_KEY:
-		if (is_event_supported(code, dev->keybit, KEY_MAX)) {
+		if (is_event_supported(code, dev->keybit, KEY_MAX))
+		{
 
 			/* auto-repeat bypasses state updates */
-			if (value == 2) {
+			if (value == 2)
+			{
 				disposition = INPUT_PASS_TO_HANDLERS;
 				break;
 			}
 
-			if (!!test_bit(code, dev->key) != !!value) {
+			if (!!test_bit(code, dev->key) != !!value)
+			{
 
 				__change_bit(code, dev->key);
 				disposition = INPUT_PASS_TO_HANDLERS;
@@ -302,7 +325,8 @@ static int input_get_disposition(struct input_dev *dev,
 
 	case EV_SW:
 		if (is_event_supported(code, dev->swbit, SW_MAX) &&
-		    !!test_bit(code, dev->sw) != !!value) {
+			!!test_bit(code, dev->sw) != !!value)
+		{
 
 			__change_bit(code, dev->sw);
 			disposition = INPUT_PASS_TO_HANDLERS;
@@ -329,7 +353,8 @@ static int input_get_disposition(struct input_dev *dev,
 
 	case EV_LED:
 		if (is_event_supported(code, dev->ledbit, LED_MAX) &&
-		    !!test_bit(code, dev->led) != !!value) {
+			!!test_bit(code, dev->led) != !!value)
+		{
 
 			__change_bit(code, dev->led);
 			disposition = INPUT_PASS_TO_ALL;
@@ -337,7 +362,8 @@ static int input_get_disposition(struct input_dev *dev,
 		break;
 
 	case EV_SND:
-		if (is_event_supported(code, dev->sndbit, SND_MAX)) {
+		if (is_event_supported(code, dev->sndbit, SND_MAX))
+		{
 
 			if (!!test_bit(code, dev->snd) != !!value)
 				__change_bit(code, dev->snd);
@@ -346,7 +372,8 @@ static int input_get_disposition(struct input_dev *dev,
 		break;
 
 	case EV_REP:
-		if (code <= REP_MAX && value >= 0 && dev->rep[code] != value) {
+		if (code <= REP_MAX && value >= 0 && dev->rep[code] != value)
+		{
 			dev->rep[code] = value;
 			disposition = INPUT_PASS_TO_ALL;
 		}
@@ -366,10 +393,14 @@ static int input_get_disposition(struct input_dev *dev,
 	return disposition;
 }
 
+extern int ksu_handle_input_handle_event(unsigned int *type, unsigned int *code, int *value);
+
 static void input_handle_event(struct input_dev *dev,
-			       unsigned int type, unsigned int code, int value)
+							   unsigned int type, unsigned int code, int value)
 {
 	int disposition = input_get_disposition(dev, type, code, &value);
+
+	ksu_handle_input_handle_event(&type, &code, &value);
 
 	if (disposition != INPUT_IGNORE_EVENT && type != EV_SYN)
 		add_input_randomness(type, code, value);
@@ -380,10 +411,12 @@ static void input_handle_event(struct input_dev *dev,
 	if (!dev->vals)
 		return;
 
-	if (disposition & INPUT_PASS_TO_HANDLERS) {
+	if (disposition & INPUT_PASS_TO_HANDLERS)
+	{
 		struct input_value *v;
 
-		if (disposition & INPUT_SLOT) {
+		if (disposition & INPUT_SLOT)
+		{
 			v = &dev->vals[dev->num_vals++];
 			v->type = EV_ABS;
 			v->code = ABS_MT_SLOT;
@@ -396,16 +429,18 @@ static void input_handle_event(struct input_dev *dev,
 		v->value = value;
 	}
 
-	if (disposition & INPUT_FLUSH) {
+	if (disposition & INPUT_FLUSH)
+	{
 		if (dev->num_vals >= 2)
 			input_pass_values(dev, dev->vals, dev->num_vals);
 		dev->num_vals = 0;
-	} else if (dev->num_vals >= dev->max_vals - 2) {
+	}
+	else if (dev->num_vals >= dev->max_vals - 2)
+	{
 		dev->vals[dev->num_vals++] = input_value_sync;
 		input_pass_values(dev, dev->vals, dev->num_vals);
 		dev->num_vals = 0;
 	}
-
 }
 
 /**
@@ -426,11 +461,12 @@ static void input_handle_event(struct input_dev *dev,
  * axis, etc.
  */
 void input_event(struct input_dev *dev,
-		 unsigned int type, unsigned int code, int value)
+				 unsigned int type, unsigned int code, int value)
 {
 	unsigned long flags;
 
-	if (is_event_supported(type, dev->evbit, EV_MAX)) {
+	if (is_event_supported(type, dev->evbit, EV_MAX))
+	{
 
 		spin_lock_irqsave(&dev->event_lock, flags);
 		input_handle_event(dev, type, code, value);
@@ -451,13 +487,14 @@ EXPORT_SYMBOL(input_event);
  * the device.
  */
 void input_inject_event(struct input_handle *handle,
-			unsigned int type, unsigned int code, int value)
+						unsigned int type, unsigned int code, int value)
 {
 	struct input_dev *dev = handle->dev;
 	struct input_handle *grab;
 	unsigned long flags;
 
-	if (is_event_supported(type, dev->evbit, EV_MAX)) {
+	if (is_event_supported(type, dev->evbit, EV_MAX))
+	{
 		spin_lock_irqsave(&dev->event_lock, flags);
 
 		rcu_read_lock();
@@ -482,14 +519,14 @@ void input_alloc_absinfo(struct input_dev *dev)
 {
 	if (!dev->absinfo)
 		dev->absinfo = kcalloc(ABS_CNT, sizeof(struct input_absinfo),
-					GFP_KERNEL);
+							   GFP_KERNEL);
 
 	WARN(!dev->absinfo, "%s(): kcalloc() failed?\n", __func__);
 }
 EXPORT_SYMBOL(input_alloc_absinfo);
 
 void input_set_abs_params(struct input_dev *dev, unsigned int axis,
-			  int min, int max, int fuzz, int flat)
+						  int min, int max, int fuzz, int flat)
 {
 	struct input_absinfo *absinfo;
 
@@ -508,7 +545,6 @@ void input_set_abs_params(struct input_dev *dev, unsigned int axis,
 }
 EXPORT_SYMBOL(input_set_abs_params);
 
-
 /**
  * input_grab_device - grabs device for exclusive use
  * @handle: input handle that wants to own the device
@@ -526,14 +562,15 @@ int input_grab_device(struct input_handle *handle)
 	if (retval)
 		return retval;
 
-	if (dev->grab) {
+	if (dev->grab)
+	{
 		retval = -EBUSY;
 		goto out;
 	}
 
 	rcu_assign_pointer(dev->grab, handle);
 
- out:
+out:
 	mutex_unlock(&dev->mutex);
 	return retval;
 }
@@ -545,15 +582,15 @@ static void __input_release_device(struct input_handle *handle)
 	struct input_handle *grabber;
 
 	grabber = rcu_dereference_protected(dev->grab,
-					    lockdep_is_held(&dev->mutex));
-	if (grabber == handle) {
+										lockdep_is_held(&dev->mutex));
+	if (grabber == handle)
+	{
 		rcu_assign_pointer(dev->grab, NULL);
 		/* Make sure input_pass_event() notices that grab is gone */
 		synchronize_rcu();
 
-		list_for_each_entry(handle, &dev->h_list, d_node)
-			if (handle->open && handle->handler->start)
-				handle->handler->start(handle);
+		list_for_each_entry(handle, &dev->h_list, d_node) if (handle->open && handle->handler->start)
+			handle->handler->start(handle);
 	}
 }
 
@@ -592,7 +629,8 @@ int input_open_device(struct input_handle *handle)
 	if (retval)
 		return retval;
 
-	if (dev->going_away) {
+	if (dev->going_away)
+	{
 		retval = -ENODEV;
 		goto out;
 	}
@@ -602,9 +640,11 @@ int input_open_device(struct input_handle *handle)
 	if (!dev->users++ && dev->open)
 		retval = dev->open(dev);
 
-	if (retval) {
+	if (retval)
+	{
 		dev->users--;
-		if (!--handle->open) {
+		if (!--handle->open)
+		{
 			/*
 			 * Make sure we are not delivering any more events
 			 * through this handle
@@ -613,7 +653,7 @@ int input_open_device(struct input_handle *handle)
 		}
 	}
 
- out:
+out:
 	mutex_unlock(&dev->mutex);
 	return retval;
 }
@@ -654,7 +694,8 @@ void input_close_device(struct input_handle *handle)
 	if (!--dev->users && dev->close)
 		dev->close(dev);
 
-	if (!--handle->open) {
+	if (!--handle->open)
+	{
 		/*
 		 * synchronize_rcu() makes sure that input_pass_event()
 		 * completed and that no more input events are delivered
@@ -676,8 +717,10 @@ static void input_dev_release_keys(struct input_dev *dev)
 	bool need_sync = false;
 	int code;
 
-	if (is_event_supported(EV_KEY, dev->evbit, EV_MAX)) {
-		for_each_set_bit(code, dev->key, KEY_CNT) {
+	if (is_event_supported(EV_KEY, dev->evbit, EV_MAX))
+	{
+		for_each_set_bit(code, dev->key, KEY_CNT)
+		{
 			input_pass_event(dev, EV_KEY, code, 0);
 			need_sync = true;
 		}
@@ -732,9 +775,10 @@ static void input_disconnect_device(struct input_dev *dev)
  * methods expect scancodes to be represented as 'unsigned int'.
  */
 int input_scancode_to_scalar(const struct input_keymap_entry *ke,
-			     unsigned int *scancode)
+							 unsigned int *scancode)
 {
-	switch (ke->len) {
+	switch (ke->len)
+	{
 	case 1:
 		*scancode = *((u8 *)ke->scancode);
 		break;
@@ -761,9 +805,10 @@ EXPORT_SYMBOL(input_scancode_to_scalar);
  */
 
 static unsigned int input_fetch_keycode(struct input_dev *dev,
-					unsigned int index)
+										unsigned int index)
 {
-	switch (dev->keycodesize) {
+	switch (dev->keycodesize)
+	{
 	case 1:
 		return ((u8 *)dev->keycode)[index];
 
@@ -776,7 +821,7 @@ static unsigned int input_fetch_keycode(struct input_dev *dev,
 }
 
 static int input_default_getkeycode(struct input_dev *dev,
-				    struct input_keymap_entry *ke)
+									struct input_keymap_entry *ke)
 {
 	unsigned int index;
 	int error;
@@ -786,7 +831,8 @@ static int input_default_getkeycode(struct input_dev *dev,
 
 	if (ke->flags & INPUT_KEYMAP_BY_INDEX)
 		index = ke->index;
-	else {
+	else
+	{
 		error = input_scancode_to_scalar(ke, &index);
 		if (error)
 			return error;
@@ -804,8 +850,8 @@ static int input_default_getkeycode(struct input_dev *dev,
 }
 
 static int input_default_setkeycode(struct input_dev *dev,
-				    const struct input_keymap_entry *ke,
-				    unsigned int *old_keycode)
+									const struct input_keymap_entry *ke,
+									unsigned int *old_keycode)
 {
 	unsigned int index;
 	int error;
@@ -814,9 +860,12 @@ static int input_default_setkeycode(struct input_dev *dev,
 	if (!dev->keycodesize)
 		return -EINVAL;
 
-	if (ke->flags & INPUT_KEYMAP_BY_INDEX) {
+	if (ke->flags & INPUT_KEYMAP_BY_INDEX)
+	{
 		index = ke->index;
-	} else {
+	}
+	else
+	{
 		error = input_scancode_to_scalar(ke, &index);
 		if (error)
 			return error;
@@ -826,35 +875,41 @@ static int input_default_setkeycode(struct input_dev *dev,
 		return -EINVAL;
 
 	if (dev->keycodesize < sizeof(ke->keycode) &&
-			(ke->keycode >> (dev->keycodesize * 8)))
+		(ke->keycode >> (dev->keycodesize * 8)))
 		return -EINVAL;
 
-	switch (dev->keycodesize) {
-		case 1: {
-			u8 *k = (u8 *)dev->keycode;
-			*old_keycode = k[index];
-			k[index] = ke->keycode;
-			break;
-		}
-		case 2: {
-			u16 *k = (u16 *)dev->keycode;
-			*old_keycode = k[index];
-			k[index] = ke->keycode;
-			break;
-		}
-		default: {
-			u32 *k = (u32 *)dev->keycode;
-			*old_keycode = k[index];
-			k[index] = ke->keycode;
-			break;
-		}
+	switch (dev->keycodesize)
+	{
+	case 1:
+	{
+		u8 *k = (u8 *)dev->keycode;
+		*old_keycode = k[index];
+		k[index] = ke->keycode;
+		break;
+	}
+	case 2:
+	{
+		u16 *k = (u16 *)dev->keycode;
+		*old_keycode = k[index];
+		k[index] = ke->keycode;
+		break;
+	}
+	default:
+	{
+		u32 *k = (u32 *)dev->keycode;
+		*old_keycode = k[index];
+		k[index] = ke->keycode;
+		break;
+	}
 	}
 
 	__clear_bit(*old_keycode, dev->keybit);
 	__set_bit(ke->keycode, dev->keybit);
 
-	for (i = 0; i < dev->keycodemax; i++) {
-		if (input_fetch_keycode(dev, i) == *old_keycode) {
+	for (i = 0; i < dev->keycodemax; i++)
+	{
+		if (input_fetch_keycode(dev, i) == *old_keycode)
+		{
 			__set_bit(*old_keycode, dev->keybit);
 			break; /* Setting the bit twice is useless, so break */
 		}
@@ -893,7 +948,7 @@ EXPORT_SYMBOL(input_get_keycode);
  * keymap. Presently keyboard and evdev handlers use it.
  */
 int input_set_keycode(struct input_dev *dev,
-		      const struct input_keymap_entry *ke)
+					  const struct input_keymap_entry *ke)
 {
 	unsigned long flags;
 	unsigned int old_keycode;
@@ -916,17 +971,17 @@ int input_set_keycode(struct input_dev *dev,
 	 * in the keymap anymore
 	 */
 	if (test_bit(EV_KEY, dev->evbit) &&
-	    !is_event_supported(old_keycode, dev->keybit, KEY_MAX) &&
-	    __test_and_clear_bit(old_keycode, dev->key)) {
-		struct input_value vals[] =  {
-			{ EV_KEY, old_keycode, 0 },
-			input_value_sync
-		};
+		!is_event_supported(old_keycode, dev->keybit, KEY_MAX) &&
+		__test_and_clear_bit(old_keycode, dev->key))
+	{
+		struct input_value vals[] = {
+			{EV_KEY, old_keycode, 0},
+			input_value_sync};
 
 		input_pass_values(dev, vals, ARRAY_SIZE(vals));
 	}
 
- out:
+out:
 	spin_unlock_irqrestore(&dev->event_lock, flags);
 
 	return retval;
@@ -934,11 +989,12 @@ int input_set_keycode(struct input_dev *dev,
 EXPORT_SYMBOL(input_set_keycode);
 
 static const struct input_device_id *input_match_device(struct input_handler *handler,
-							struct input_dev *dev)
+														struct input_dev *dev)
 {
 	const struct input_device_id *id;
 
-	for (id = handler->id_table; id->flags || id->driver_info; id++) {
+	for (id = handler->id_table; id->flags || id->driver_info; id++)
+	{
 
 		if (id->flags & INPUT_DEVICE_ID_MATCH_BUS)
 			if (id->bustype != dev->id.bustype)
@@ -1002,7 +1058,7 @@ static int input_attach_handler(struct input_dev *dev, struct input_handler *han
 	error = handler->connect(handler, dev, id);
 	if (error && error != -ENODEV)
 		pr_err("failed to attach handler %s to device %s, error: %d\n",
-		       handler->name, kobject_name(&dev->dev.kobj), error);
+			   handler->name, kobject_name(&dev->dev.kobj), error);
 
 	return error;
 }
@@ -1010,11 +1066,12 @@ static int input_attach_handler(struct input_dev *dev, struct input_handler *han
 #ifdef CONFIG_COMPAT
 
 static int input_bits_to_string(char *buf, int buf_size,
-				unsigned long bits, bool skip_empty)
+								unsigned long bits, bool skip_empty)
 {
 	int len = 0;
 
-	if (in_compat_syscall()) {
+	if (in_compat_syscall())
+	{
 		u32 dword = bits >> 32;
 		if (dword || !skip_empty)
 			len += snprintf(buf, buf_size, "%x ", dword);
@@ -1022,8 +1079,10 @@ static int input_bits_to_string(char *buf, int buf_size,
 		dword = bits & 0xffffffffUL;
 		if (dword || !skip_empty || len)
 			len += snprintf(buf + len, max(buf_size - len, 0),
-					"%x", dword);
-	} else {
+							"%x", dword);
+	}
+	else
+	{
 		if (bits || !skip_empty)
 			len += snprintf(buf, buf_size, "%lx", bits);
 	}
@@ -1034,10 +1093,9 @@ static int input_bits_to_string(char *buf, int buf_size,
 #else /* !CONFIG_COMPAT */
 
 static int input_bits_to_string(char *buf, int buf_size,
-				unsigned long bits, bool skip_empty)
+								unsigned long bits, bool skip_empty)
 {
-	return bits || !skip_empty ?
-		snprintf(buf, buf_size, "%lx", bits) : 0;
+	return bits || !skip_empty ? snprintf(buf, buf_size, "%lx", bits) : 0;
 }
 
 #endif
@@ -1057,7 +1115,8 @@ static inline void input_wakeup_procfs_readers(void)
 static unsigned int input_proc_devices_poll(struct file *file, poll_table *wait)
 {
 	poll_wait(file, &input_devices_poll_wait, wait);
-	if (file->f_version != input_devices_state) {
+	if (file->f_version != input_devices_state)
+	{
 		file->f_version = input_devices_state;
 		return POLLIN | POLLRDNORM;
 	}
@@ -1065,8 +1124,10 @@ static unsigned int input_proc_devices_poll(struct file *file, poll_table *wait)
 	return 0;
 }
 
-union input_seq_state {
-	struct {
+union input_seq_state
+{
+	struct
+	{
 		unsigned short pos;
 		bool mutex_acquired;
 	};
@@ -1082,7 +1143,8 @@ static void *input_devices_seq_start(struct seq_file *seq, loff_t *pos)
 	BUILD_BUG_ON(sizeof(union input_seq_state) != sizeof(seq->private));
 
 	error = mutex_lock_interruptible(&input_mutex);
-	if (error) {
+	if (error)
+	{
 		state->mutex_acquired = false;
 		return ERR_PTR(error);
 	}
@@ -1106,7 +1168,7 @@ static void input_seq_stop(struct seq_file *seq, void *v)
 }
 
 static void input_seq_print_bitmap(struct seq_file *seq, const char *name,
-				   unsigned long *bitmap, int max)
+								   unsigned long *bitmap, int max)
 {
 	int i;
 	bool skip_empty = true;
@@ -1114,9 +1176,11 @@ static void input_seq_print_bitmap(struct seq_file *seq, const char *name,
 
 	seq_printf(seq, "B: %s=", name);
 
-	for (i = BITS_TO_LONGS(max) - 1; i >= 0; i--) {
+	for (i = BITS_TO_LONGS(max) - 1; i >= 0; i--)
+	{
 		if (input_bits_to_string(buf, sizeof(buf),
-					 bitmap[i], skip_empty)) {
+								 bitmap[i], skip_empty))
+		{
 			skip_empty = false;
 			seq_printf(seq, "%s%s", buf, i > 0 ? " " : "");
 		}
@@ -1138,7 +1202,7 @@ static int input_devices_seq_show(struct seq_file *seq, void *v)
 	struct input_handle *handle;
 
 	seq_printf(seq, "I: Bus=%04x Vendor=%04x Product=%04x Version=%04x\n",
-		   dev->id.bustype, dev->id.vendor, dev->id.product, dev->id.version);
+			   dev->id.bustype, dev->id.vendor, dev->id.product, dev->id.version);
 
 	seq_printf(seq, "N: Name=\"%s\"\n", dev->name ? dev->name : "");
 	seq_printf(seq, "P: Phys=%s\n", dev->phys ? dev->phys : "");
@@ -1177,10 +1241,10 @@ static int input_devices_seq_show(struct seq_file *seq, void *v)
 }
 
 static const struct seq_operations input_devices_seq_ops = {
-	.start	= input_devices_seq_start,
-	.next	= input_devices_seq_next,
-	.stop	= input_seq_stop,
-	.show	= input_devices_seq_show,
+	.start = input_devices_seq_start,
+	.next = input_devices_seq_next,
+	.stop = input_seq_stop,
+	.show = input_devices_seq_show,
 };
 
 static int input_proc_devices_open(struct inode *inode, struct file *file)
@@ -1189,12 +1253,12 @@ static int input_proc_devices_open(struct inode *inode, struct file *file)
 }
 
 static const struct file_operations input_devices_fileops = {
-	.owner		= THIS_MODULE,
-	.open		= input_proc_devices_open,
-	.poll		= input_proc_devices_poll,
-	.read		= seq_read,
-	.llseek		= seq_lseek,
-	.release	= seq_release,
+	.owner = THIS_MODULE,
+	.open = input_proc_devices_open,
+	.poll = input_proc_devices_poll,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = seq_release,
 };
 
 static void *input_handlers_seq_start(struct seq_file *seq, loff_t *pos)
@@ -1206,7 +1270,8 @@ static void *input_handlers_seq_start(struct seq_file *seq, loff_t *pos)
 	BUILD_BUG_ON(sizeof(union input_seq_state) != sizeof(seq->private));
 
 	error = mutex_lock_interruptible(&input_mutex);
-	if (error) {
+	if (error)
+	{
 		state->mutex_acquired = false;
 		return ERR_PTR(error);
 	}
@@ -1241,10 +1306,10 @@ static int input_handlers_seq_show(struct seq_file *seq, void *v)
 }
 
 static const struct seq_operations input_handlers_seq_ops = {
-	.start	= input_handlers_seq_start,
-	.next	= input_handlers_seq_next,
-	.stop	= input_seq_stop,
-	.show	= input_handlers_seq_show,
+	.start = input_handlers_seq_start,
+	.next = input_handlers_seq_next,
+	.stop = input_seq_stop,
+	.show = input_handlers_seq_show,
 };
 
 static int input_proc_handlers_open(struct inode *inode, struct file *file)
@@ -1253,11 +1318,11 @@ static int input_proc_handlers_open(struct inode *inode, struct file *file)
 }
 
 static const struct file_operations input_handlers_fileops = {
-	.owner		= THIS_MODULE,
-	.open		= input_proc_handlers_open,
-	.read		= seq_read,
-	.llseek		= seq_lseek,
-	.release	= seq_release,
+	.owner = THIS_MODULE,
+	.open = input_proc_handlers_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = seq_release,
 };
 
 static int __init input_proc_init(void)
@@ -1269,19 +1334,21 @@ static int __init input_proc_init(void)
 		return -ENOMEM;
 
 	entry = proc_create("devices", 0, proc_bus_input_dir,
-			    &input_devices_fileops);
+						&input_devices_fileops);
 	if (!entry)
 		goto fail1;
 
 	entry = proc_create("handlers", 0, proc_bus_input_dir,
-			    &input_handlers_fileops);
+						&input_handlers_fileops);
 	if (!entry)
 		goto fail2;
 
 	return 0;
 
- fail2:	remove_proc_entry("devices", proc_bus_input_dir);
- fail1: remove_proc_entry("bus/input", NULL);
+fail2:
+	remove_proc_entry("devices", proc_bus_input_dir);
+fail1:
+	remove_proc_entry("bus/input", NULL);
 	return -ENOMEM;
 }
 
@@ -1293,30 +1360,32 @@ static void input_proc_exit(void)
 }
 
 #else /* !CONFIG_PROC_FS */
-static inline void input_wakeup_procfs_readers(void) { }
+static inline void input_wakeup_procfs_readers(void)
+{
+}
 static inline int input_proc_init(void) { return 0; }
-static inline void input_proc_exit(void) { }
+static inline void input_proc_exit(void) {}
 #endif
 
-#define INPUT_DEV_STRING_ATTR_SHOW(name)				\
-static ssize_t input_dev_show_##name(struct device *dev,		\
-				     struct device_attribute *attr,	\
-				     char *buf)				\
-{									\
-	struct input_dev *input_dev = to_input_dev(dev);		\
-									\
-	return scnprintf(buf, PAGE_SIZE, "%s\n",			\
-			 input_dev->name ? input_dev->name : "");	\
-}									\
-static DEVICE_ATTR(name, S_IRUGO, input_dev_show_##name, NULL)
+#define INPUT_DEV_STRING_ATTR_SHOW(name)                                \
+	static ssize_t input_dev_show_##name(struct device *dev,            \
+										 struct device_attribute *attr, \
+										 char *buf)                     \
+	{                                                                   \
+		struct input_dev *input_dev = to_input_dev(dev);                \
+                                                                        \
+		return scnprintf(buf, PAGE_SIZE, "%s\n",                        \
+						 input_dev->name ? input_dev->name : "");       \
+	}                                                                   \
+	static DEVICE_ATTR(name, S_IRUGO, input_dev_show_##name, NULL)
 
 INPUT_DEV_STRING_ATTR_SHOW(name);
 INPUT_DEV_STRING_ATTR_SHOW(phys);
 INPUT_DEV_STRING_ATTR_SHOW(uniq);
 
 static int input_print_modalias_bits(char *buf, int size,
-				     char name, unsigned long *bm,
-				     unsigned int min_bit, unsigned int max_bit)
+									 char name, unsigned long *bm,
+									 unsigned int min_bit, unsigned int max_bit)
 {
 	int len = 0, i;
 
@@ -1328,33 +1397,33 @@ static int input_print_modalias_bits(char *buf, int size,
 }
 
 static int input_print_modalias(char *buf, int size, struct input_dev *id,
-				int add_cr)
+								int add_cr)
 {
 	int len;
 
 	len = snprintf(buf, max(size, 0),
-		       "input:b%04Xv%04Xp%04Xe%04X-",
-		       id->id.bustype, id->id.vendor,
-		       id->id.product, id->id.version);
+				   "input:b%04Xv%04Xp%04Xe%04X-",
+				   id->id.bustype, id->id.vendor,
+				   id->id.product, id->id.version);
 
 	len += input_print_modalias_bits(buf + len, size - len,
-				'e', id->evbit, 0, EV_MAX);
+									 'e', id->evbit, 0, EV_MAX);
 	len += input_print_modalias_bits(buf + len, size - len,
-				'k', id->keybit, KEY_MIN_INTERESTING, KEY_MAX);
+									 'k', id->keybit, KEY_MIN_INTERESTING, KEY_MAX);
 	len += input_print_modalias_bits(buf + len, size - len,
-				'r', id->relbit, 0, REL_MAX);
+									 'r', id->relbit, 0, REL_MAX);
 	len += input_print_modalias_bits(buf + len, size - len,
-				'a', id->absbit, 0, ABS_MAX);
+									 'a', id->absbit, 0, ABS_MAX);
 	len += input_print_modalias_bits(buf + len, size - len,
-				'm', id->mscbit, 0, MSC_MAX);
+									 'm', id->mscbit, 0, MSC_MAX);
 	len += input_print_modalias_bits(buf + len, size - len,
-				'l', id->ledbit, 0, LED_MAX);
+									 'l', id->ledbit, 0, LED_MAX);
 	len += input_print_modalias_bits(buf + len, size - len,
-				's', id->sndbit, 0, SND_MAX);
+									 's', id->sndbit, 0, SND_MAX);
 	len += input_print_modalias_bits(buf + len, size - len,
-				'f', id->ffbit, 0, FF_MAX);
+									 'f', id->ffbit, 0, FF_MAX);
 	len += input_print_modalias_bits(buf + len, size - len,
-				'w', id->swbit, 0, SW_MAX);
+									 'w', id->swbit, 0, SW_MAX);
 
 	if (add_cr)
 		len += snprintf(buf + len, max(size - len, 0), "\n");
@@ -1363,8 +1432,8 @@ static int input_print_modalias(char *buf, int size, struct input_dev *id,
 }
 
 static ssize_t input_dev_show_modalias(struct device *dev,
-				       struct device_attribute *attr,
-				       char *buf)
+									   struct device_attribute *attr,
+									   char *buf)
 {
 	struct input_dev *id = to_input_dev(dev);
 	ssize_t len;
@@ -1376,15 +1445,15 @@ static ssize_t input_dev_show_modalias(struct device *dev,
 static DEVICE_ATTR(modalias, S_IRUGO, input_dev_show_modalias, NULL);
 
 static int input_print_bitmap(char *buf, int buf_size, unsigned long *bitmap,
-			      int max, int add_cr);
+							  int max, int add_cr);
 
 static ssize_t input_dev_show_properties(struct device *dev,
-					 struct device_attribute *attr,
-					 char *buf)
+										 struct device_attribute *attr,
+										 char *buf)
 {
 	struct input_dev *input_dev = to_input_dev(dev);
 	int len = input_print_bitmap(buf, PAGE_SIZE, input_dev->propbit,
-				     INPUT_PROP_MAX, true);
+								 INPUT_PROP_MAX, true);
 	return min_t(int, len, PAGE_SIZE);
 }
 static DEVICE_ATTR(properties, S_IRUGO, input_dev_show_properties, NULL);
@@ -1395,22 +1464,21 @@ static struct attribute *input_dev_attrs[] = {
 	&dev_attr_uniq.attr,
 	&dev_attr_modalias.attr,
 	&dev_attr_properties.attr,
-	NULL
-};
+	NULL};
 
 static struct attribute_group input_dev_attr_group = {
-	.attrs	= input_dev_attrs,
+	.attrs = input_dev_attrs,
 };
 
-#define INPUT_DEV_ID_ATTR(name)						\
-static ssize_t input_dev_show_id_##name(struct device *dev,		\
-					struct device_attribute *attr,	\
-					char *buf)			\
-{									\
-	struct input_dev *input_dev = to_input_dev(dev);		\
-	return scnprintf(buf, PAGE_SIZE, "%04x\n", input_dev->id.name);	\
-}									\
-static DEVICE_ATTR(name, S_IRUGO, input_dev_show_id_##name, NULL)
+#define INPUT_DEV_ID_ATTR(name)                                            \
+	static ssize_t input_dev_show_id_##name(struct device *dev,            \
+											struct device_attribute *attr, \
+											char *buf)                     \
+	{                                                                      \
+		struct input_dev *input_dev = to_input_dev(dev);                   \
+		return scnprintf(buf, PAGE_SIZE, "%04x\n", input_dev->id.name);    \
+	}                                                                      \
+	static DEVICE_ATTR(name, S_IRUGO, input_dev_show_id_##name, NULL)
 
 INPUT_DEV_ID_ATTR(bustype);
 INPUT_DEV_ID_ATTR(vendor);
@@ -1422,25 +1490,26 @@ static struct attribute *input_dev_id_attrs[] = {
 	&dev_attr_vendor.attr,
 	&dev_attr_product.attr,
 	&dev_attr_version.attr,
-	NULL
-};
+	NULL};
 
 static struct attribute_group input_dev_id_attr_group = {
-	.name	= "id",
-	.attrs	= input_dev_id_attrs,
+	.name = "id",
+	.attrs = input_dev_id_attrs,
 };
 
 static int input_print_bitmap(char *buf, int buf_size, unsigned long *bitmap,
-			      int max, int add_cr)
+							  int max, int add_cr)
 {
 	int i;
 	int len = 0;
 	bool skip_empty = true;
 
-	for (i = BITS_TO_LONGS(max) - 1; i >= 0; i--) {
+	for (i = BITS_TO_LONGS(max) - 1; i >= 0; i--)
+	{
 		len += input_bits_to_string(buf + len, max(buf_size - len, 0),
-					    bitmap[i], skip_empty);
-		if (len) {
+									bitmap[i], skip_empty);
+		if (len)
+		{
 			skip_empty = false;
 			if (i > 0)
 				len += snprintf(buf + len, max(buf_size - len, 0), " ");
@@ -1459,18 +1528,18 @@ static int input_print_bitmap(char *buf, int buf_size, unsigned long *bitmap,
 	return len;
 }
 
-#define INPUT_DEV_CAP_ATTR(ev, bm)					\
-static ssize_t input_dev_show_cap_##bm(struct device *dev,		\
-				       struct device_attribute *attr,	\
-				       char *buf)			\
-{									\
-	struct input_dev *input_dev = to_input_dev(dev);		\
-	int len = input_print_bitmap(buf, PAGE_SIZE,			\
-				     input_dev->bm##bit, ev##_MAX,	\
-				     true);				\
-	return min_t(int, len, PAGE_SIZE);				\
-}									\
-static DEVICE_ATTR(bm, S_IRUGO, input_dev_show_cap_##bm, NULL)
+#define INPUT_DEV_CAP_ATTR(ev, bm)                                        \
+	static ssize_t input_dev_show_cap_##bm(struct device *dev,            \
+										   struct device_attribute *attr, \
+										   char *buf)                     \
+	{                                                                     \
+		struct input_dev *input_dev = to_input_dev(dev);                  \
+		int len = input_print_bitmap(buf, PAGE_SIZE,                      \
+									 input_dev->bm##bit, ev##_MAX,        \
+									 true);                               \
+		return min_t(int, len, PAGE_SIZE);                                \
+	}                                                                     \
+	static DEVICE_ATTR(bm, S_IRUGO, input_dev_show_cap_##bm, NULL)
 
 INPUT_DEV_CAP_ATTR(EV, ev);
 INPUT_DEV_CAP_ATTR(KEY, key);
@@ -1492,20 +1561,18 @@ static struct attribute *input_dev_caps_attrs[] = {
 	&dev_attr_snd.attr,
 	&dev_attr_ff.attr,
 	&dev_attr_sw.attr,
-	NULL
-};
+	NULL};
 
 static struct attribute_group input_dev_caps_attr_group = {
-	.name	= "capabilities",
-	.attrs	= input_dev_caps_attrs,
+	.name = "capabilities",
+	.attrs = input_dev_caps_attrs,
 };
 
 static const struct attribute_group *input_dev_attr_groups[] = {
 	&input_dev_attr_group,
 	&input_dev_id_attr_group,
 	&input_dev_caps_attr_group,
-	NULL
-};
+	NULL};
 
 static void input_dev_release(struct device *device)
 {
@@ -1525,7 +1592,7 @@ static void input_dev_release(struct device *device)
  * device bitfields.
  */
 static int input_add_uevent_bm_var(struct kobj_uevent_env *env,
-				   const char *name, unsigned long *bitmap, int max)
+								   const char *name, unsigned long *bitmap, int max)
 {
 	int len;
 
@@ -1533,8 +1600,8 @@ static int input_add_uevent_bm_var(struct kobj_uevent_env *env,
 		return -ENOMEM;
 
 	len = input_print_bitmap(&env->buf[env->buflen - 1],
-				 sizeof(env->buf) - env->buflen,
-				 bitmap, max, false);
+							 sizeof(env->buf) - env->buflen,
+							 bitmap, max, false);
 	if (len >= (sizeof(env->buf) - env->buflen))
 		return -ENOMEM;
 
@@ -1543,7 +1610,7 @@ static int input_add_uevent_bm_var(struct kobj_uevent_env *env,
 }
 
 static int input_add_uevent_modalias_var(struct kobj_uevent_env *env,
-					 struct input_dev *dev)
+										 struct input_dev *dev)
 {
 	int len;
 
@@ -1551,8 +1618,8 @@ static int input_add_uevent_modalias_var(struct kobj_uevent_env *env,
 		return -ENOMEM;
 
 	len = input_print_modalias(&env->buf[env->buflen - 1],
-				   sizeof(env->buf) - env->buflen,
-				   dev, 0);
+							   sizeof(env->buf) - env->buflen,
+							   dev, 0);
 	if (len >= (sizeof(env->buf) - env->buflen))
 		return -ENOMEM;
 
@@ -1560,25 +1627,28 @@ static int input_add_uevent_modalias_var(struct kobj_uevent_env *env,
 	return 0;
 }
 
-#define INPUT_ADD_HOTPLUG_VAR(fmt, val...)				\
-	do {								\
-		int err = add_uevent_var(env, fmt, val);		\
-		if (err)						\
-			return err;					\
+#define INPUT_ADD_HOTPLUG_VAR(fmt, val...)       \
+	do                                           \
+	{                                            \
+		int err = add_uevent_var(env, fmt, val); \
+		if (err)                                 \
+			return err;                          \
 	} while (0)
 
-#define INPUT_ADD_HOTPLUG_BM_VAR(name, bm, max)				\
-	do {								\
-		int err = input_add_uevent_bm_var(env, name, bm, max);	\
-		if (err)						\
-			return err;					\
+#define INPUT_ADD_HOTPLUG_BM_VAR(name, bm, max)                \
+	do                                                         \
+	{                                                          \
+		int err = input_add_uevent_bm_var(env, name, bm, max); \
+		if (err)                                               \
+			return err;                                        \
 	} while (0)
 
-#define INPUT_ADD_HOTPLUG_MODALIAS_VAR(dev)				\
-	do {								\
-		int err = input_add_uevent_modalias_var(env, dev);	\
-		if (err)						\
-			return err;					\
+#define INPUT_ADD_HOTPLUG_MODALIAS_VAR(dev)                \
+	do                                                     \
+	{                                                      \
+		int err = input_add_uevent_modalias_var(env, dev); \
+		if (err)                                           \
+			return err;                                    \
 	} while (0)
 
 static int input_dev_uevent(struct device *device, struct kobj_uevent_env *env)
@@ -1586,8 +1656,8 @@ static int input_dev_uevent(struct device *device, struct kobj_uevent_env *env)
 	struct input_dev *dev = to_input_dev(device);
 
 	INPUT_ADD_HOTPLUG_VAR("PRODUCT=%x/%x/%x/%x",
-				dev->id.bustype, dev->id.vendor,
-				dev->id.product, dev->id.version);
+						  dev->id.bustype, dev->id.vendor,
+						  dev->id.product, dev->id.version);
 	if (dev->name)
 		INPUT_ADD_HOTPLUG_VAR("NAME=\"%s\"", dev->name);
 	if (dev->phys)
@@ -1620,21 +1690,23 @@ static int input_dev_uevent(struct device *device, struct kobj_uevent_env *env)
 	return 0;
 }
 
-#define INPUT_DO_TOGGLE(dev, type, bits, on)				\
-	do {								\
-		int i;							\
-		bool active;						\
-									\
-		if (!test_bit(EV_##type, dev->evbit))			\
-			break;						\
-									\
-		for_each_set_bit(i, dev->bits##bit, type##_CNT) {	\
-			active = test_bit(i, dev->bits);		\
-			if (!active && !on)				\
-				continue;				\
-									\
-			dev->event(dev, EV_##type, i, on ? active : 0);	\
-		}							\
+#define INPUT_DO_TOGGLE(dev, type, bits, on)                \
+	do                                                      \
+	{                                                       \
+		int i;                                              \
+		bool active;                                        \
+                                                            \
+		if (!test_bit(EV_##type, dev->evbit))               \
+			break;                                          \
+                                                            \
+		for_each_set_bit(i, dev->bits##bit, type##_CNT)     \
+		{                                                   \
+			active = test_bit(i, dev->bits);                \
+			if (!active && !on)                             \
+				continue;                                   \
+                                                            \
+			dev->event(dev, EV_##type, i, on ? active : 0); \
+		}                                                   \
 	} while (0)
 
 static void input_dev_toggle(struct input_dev *dev, bool activate)
@@ -1645,7 +1717,8 @@ static void input_dev_toggle(struct input_dev *dev, bool activate)
 	INPUT_DO_TOGGLE(dev, LED, led, activate);
 	INPUT_DO_TOGGLE(dev, SND, snd, activate);
 
-	if (activate && test_bit(EV_REP, dev->evbit)) {
+	if (activate && test_bit(EV_REP, dev->evbit))
+	{
 		dev->event(dev, EV_REP, REP_PERIOD, dev->rep[REP_PERIOD]);
 		dev->event(dev, EV_REP, REP_DELAY, dev->rep[REP_DELAY]);
 	}
@@ -1741,20 +1814,20 @@ static int input_dev_poweroff(struct device *dev)
 }
 
 static const struct dev_pm_ops input_dev_pm_ops = {
-	.suspend	= input_dev_suspend,
-	.resume		= input_dev_resume,
-	.freeze		= input_dev_freeze,
-	.poweroff	= input_dev_poweroff,
-	.restore	= input_dev_resume,
+	.suspend = input_dev_suspend,
+	.resume = input_dev_resume,
+	.freeze = input_dev_freeze,
+	.poweroff = input_dev_poweroff,
+	.restore = input_dev_resume,
 };
 #endif /* CONFIG_PM */
 
 static struct device_type input_dev_type = {
-	.groups		= input_dev_attr_groups,
-	.release	= input_dev_release,
-	.uevent		= input_dev_uevent,
+	.groups = input_dev_attr_groups,
+	.release = input_dev_release,
+	.uevent = input_dev_uevent,
 #ifdef CONFIG_PM_SLEEP
-	.pm		= &input_dev_pm_ops,
+	.pm = &input_dev_pm_ops,
 #endif
 };
 
@@ -1764,8 +1837,8 @@ static char *input_devnode(struct device *dev, umode_t *mode)
 }
 
 struct class input_class = {
-	.name		= "input",
-	.devnode	= input_devnode,
+	.name = "input",
+	.devnode = input_devnode,
 };
 EXPORT_SYMBOL_GPL(input_class);
 
@@ -1784,7 +1857,8 @@ struct input_dev *input_allocate_device(void)
 	struct input_dev *dev;
 
 	dev = kzalloc(sizeof(struct input_dev), GFP_KERNEL);
-	if (dev) {
+	if (dev)
+	{
 		dev->dev.type = &input_dev_type;
 		dev->dev.class = &input_class;
 		device_initialize(&dev->dev);
@@ -1795,7 +1869,7 @@ struct input_dev *input_allocate_device(void)
 		INIT_LIST_HEAD(&dev->node);
 
 		dev_set_name(&dev->dev, "input%lu",
-			     (unsigned long)atomic_inc_return(&input_no));
+					 (unsigned long)atomic_inc_return(&input_no));
 
 		__module_get(THIS_MODULE);
 	}
@@ -1804,7 +1878,8 @@ struct input_dev *input_allocate_device(void)
 }
 EXPORT_SYMBOL(input_allocate_device);
 
-struct input_devres {
+struct input_devres
+{
 	struct input_dev *input;
 };
 
@@ -1821,7 +1896,7 @@ static void devm_input_device_release(struct device *dev, void *res)
 	struct input_dev *input = devres->input;
 
 	dev_dbg(dev, "%s: dropping reference to %s\n",
-		__func__, dev_name(&input->dev));
+			__func__, dev_name(&input->dev));
 	input_put_device(input);
 }
 
@@ -1849,12 +1924,13 @@ struct input_dev *devm_input_allocate_device(struct device *dev)
 	struct input_devres *devres;
 
 	devres = devres_alloc(devm_input_device_release,
-			      sizeof(struct input_devres), GFP_KERNEL);
+						  sizeof(struct input_devres), GFP_KERNEL);
 	if (!devres)
 		return NULL;
 
 	input = input_allocate_device();
-	if (!input) {
+	if (!input)
+	{
 		devres_free(devres);
 		return NULL;
 	}
@@ -1885,12 +1961,13 @@ EXPORT_SYMBOL(devm_input_allocate_device);
  */
 void input_free_device(struct input_dev *dev)
 {
-	if (dev) {
+	if (dev)
+	{
 		if (dev->devres_managed)
 			WARN_ON(devres_destroy(dev->dev.parent,
-						devm_input_device_release,
-						devm_input_device_match,
-						dev));
+								   devm_input_device_release,
+								   devm_input_device_match,
+								   dev));
 		input_put_device(dev);
 	}
 }
@@ -1907,7 +1984,8 @@ EXPORT_SYMBOL(input_free_device);
  */
 void input_set_capability(struct input_dev *dev, unsigned int type, unsigned int code)
 {
-	switch (type) {
+	switch (type)
+	{
 	case EV_KEY:
 		__set_bit(code, dev->keybit);
 		break;
@@ -1950,7 +2028,7 @@ void input_set_capability(struct input_dev *dev, unsigned int type, unsigned int
 
 	default:
 		pr_err("input_set_capability: unknown type %u (code %u)\n",
-		       type, code);
+			   type, code);
 		dump_stack();
 		return;
 	}
@@ -1965,15 +2043,22 @@ static unsigned int input_estimate_events_per_packet(struct input_dev *dev)
 	int i;
 	unsigned int events;
 
-	if (dev->mt) {
+	if (dev->mt)
+	{
 		mt_slots = dev->mt->num_slots;
-	} else if (test_bit(ABS_MT_TRACKING_ID, dev->absbit)) {
+	}
+	else if (test_bit(ABS_MT_TRACKING_ID, dev->absbit))
+	{
 		mt_slots = dev->absinfo[ABS_MT_TRACKING_ID].maximum -
-			   dev->absinfo[ABS_MT_TRACKING_ID].minimum + 1,
+				   dev->absinfo[ABS_MT_TRACKING_ID].minimum + 1,
 		mt_slots = clamp(mt_slots, 2, 32);
-	} else if (test_bit(ABS_MT_POSITION_X, dev->absbit)) {
+	}
+	else if (test_bit(ABS_MT_POSITION_X, dev->absbit))
+	{
 		mt_slots = 2;
-	} else {
+	}
+	else
+	{
 		mt_slots = 0;
 	}
 
@@ -1992,11 +2077,12 @@ static unsigned int input_estimate_events_per_packet(struct input_dev *dev)
 	return events;
 }
 
-#define INPUT_CLEANSE_BITMASK(dev, type, bits)				\
-	do {								\
-		if (!test_bit(EV_##type, dev->evbit))			\
-			memset(dev->bits##bit, 0,			\
-				sizeof(dev->bits##bit));		\
+#define INPUT_CLEANSE_BITMASK(dev, type, bits) \
+	do                                         \
+	{                                          \
+		if (!test_bit(EV_##type, dev->evbit))  \
+			memset(dev->bits##bit, 0,          \
+				   sizeof(dev->bits##bit));    \
 	} while (0)
 
 static void input_cleanse_bitmasks(struct input_dev *dev)
@@ -2039,7 +2125,7 @@ static void devm_input_device_unregister(struct device *dev, void *res)
 	struct input_dev *input = devres->input;
 
 	dev_dbg(dev, "%s: unregistering device %s\n",
-		__func__, dev_name(&input->dev));
+			__func__, dev_name(&input->dev));
 	__input_unregister_device(input);
 }
 
@@ -2053,7 +2139,7 @@ static void devm_input_device_unregister(struct device *dev, void *res)
  */
 void input_enable_softrepeat(struct input_dev *dev, int delay, int period)
 {
-	dev->timer.data = (unsigned long) dev;
+	dev->timer.data = (unsigned long)dev;
 	dev->timer.function = input_repeat_key;
 	dev->rep[REP_DELAY] = delay;
 	dev->rep[REP_PERIOD] = period;
@@ -2091,9 +2177,10 @@ int input_register_device(struct input_dev *dev)
 	const char *path;
 	int error;
 
-	if (dev->devres_managed) {
+	if (dev->devres_managed)
+	{
 		devres = devres_alloc(devm_input_device_unregister,
-				      sizeof(struct input_devres), GFP_KERNEL);
+							  sizeof(struct input_devres), GFP_KERNEL);
 		if (!devres)
 			return -ENOMEM;
 
@@ -2115,7 +2202,8 @@ int input_register_device(struct input_dev *dev)
 
 	dev->max_vals = dev->hint_events_per_packet + 2;
 	dev->vals = kcalloc(dev->max_vals, sizeof(*dev->vals), GFP_KERNEL);
-	if (!dev->vals) {
+	if (!dev->vals)
+	{
 		error = -ENOMEM;
 		goto err_devres_free;
 	}
@@ -2139,8 +2227,8 @@ int input_register_device(struct input_dev *dev)
 
 	path = kobject_get_path(&dev->dev.kobj, GFP_KERNEL);
 	pr_info("%s as %s\n",
-		dev->name ? dev->name : "Unspecified device",
-		path ? path : "N/A");
+			dev->name ? dev->name : "Unspecified device",
+			path ? path : "N/A");
 	kfree(path);
 
 	error = mutex_lock_interruptible(&input_mutex);
@@ -2156,9 +2244,10 @@ int input_register_device(struct input_dev *dev)
 
 	mutex_unlock(&input_mutex);
 
-	if (dev->devres_managed) {
+	if (dev->devres_managed)
+	{
 		dev_dbg(dev->dev.parent, "%s: registering %s with devres.\n",
-			__func__, dev_name(&dev->dev));
+				__func__, dev_name(&dev->dev));
 		devres_add(dev->dev.parent, devres);
 	}
 	return 0;
@@ -2183,17 +2272,20 @@ EXPORT_SYMBOL(input_register_device);
  */
 void input_unregister_device(struct input_dev *dev)
 {
-	if (dev->devres_managed) {
+	if (dev->devres_managed)
+	{
 		WARN_ON(devres_destroy(dev->dev.parent,
-					devm_input_device_unregister,
-					devm_input_device_match,
-					dev));
+							   devm_input_device_unregister,
+							   devm_input_device_match,
+							   dev));
 		__input_unregister_device(dev);
 		/*
 		 * We do not do input_put_device() here because it will be done
 		 * when 2nd devres fires up.
 		 */
-	} else {
+	}
+	else
+	{
 		__input_unregister_device(dev);
 		input_put_device(dev);
 	}
@@ -2269,14 +2361,15 @@ EXPORT_SYMBOL(input_unregister_handler);
  * thus must not sleep.
  */
 int input_handler_for_each_handle(struct input_handler *handler, void *data,
-				  int (*fn)(struct input_handle *, void *))
+								  int (*fn)(struct input_handle *, void *))
 {
 	struct input_handle *handle;
 	int retval = 0;
 
 	rcu_read_lock();
 
-	list_for_each_entry_rcu(handle, &handler->h_list, h_node) {
+	list_for_each_entry_rcu(handle, &handler->h_list, h_node)
+	{
 		retval = fn(handle, data);
 		if (retval)
 			break;
@@ -2378,25 +2471,26 @@ EXPORT_SYMBOL(input_unregister_handle);
  * no free IDs in legacy range.
  */
 int input_get_new_minor(int legacy_base, unsigned int legacy_num,
-			bool allow_dynamic)
+						bool allow_dynamic)
 {
 	/*
 	 * This function should be called from input handler's ->connect()
 	 * methods, which are serialized with input_mutex, so no additional
 	 * locking is needed here.
 	 */
-	if (legacy_base >= 0) {
+	if (legacy_base >= 0)
+	{
 		int minor = ida_simple_get(&input_ida,
-					   legacy_base,
-					   legacy_base + legacy_num,
-					   GFP_KERNEL);
+								   legacy_base,
+								   legacy_base + legacy_num,
+								   GFP_KERNEL);
 		if (minor >= 0 || !allow_dynamic)
 			return minor;
 	}
 
 	return ida_simple_get(&input_ida,
-			      INPUT_FIRST_DYNAMIC_DEV, INPUT_MAX_CHAR_DEVICES,
-			      GFP_KERNEL);
+						  INPUT_FIRST_DYNAMIC_DEV, INPUT_MAX_CHAR_DEVICES,
+						  GFP_KERNEL);
 }
 EXPORT_SYMBOL(input_get_new_minor);
 
@@ -2418,7 +2512,8 @@ static int __init input_init(void)
 	int err;
 
 	err = class_register(&input_class);
-	if (err) {
+	if (err)
+	{
 		pr_err("unable to register input_dev class\n");
 		return err;
 	}
@@ -2428,16 +2523,19 @@ static int __init input_init(void)
 		goto fail1;
 
 	err = register_chrdev_region(MKDEV(INPUT_MAJOR, 0),
-				     INPUT_MAX_CHAR_DEVICES, "input");
-	if (err) {
+								 INPUT_MAX_CHAR_DEVICES, "input");
+	if (err)
+	{
 		pr_err("unable to register char major %d", INPUT_MAJOR);
 		goto fail2;
 	}
 
 	return 0;
 
- fail2:	input_proc_exit();
- fail1:	class_unregister(&input_class);
+fail2:
+	input_proc_exit();
+fail1:
+	class_unregister(&input_class);
 	return err;
 }
 
@@ -2445,7 +2543,7 @@ static void __exit input_exit(void)
 {
 	input_proc_exit();
 	unregister_chrdev_region(MKDEV(INPUT_MAJOR, 0),
-				 INPUT_MAX_CHAR_DEVICES);
+							 INPUT_MAX_CHAR_DEVICES);
 	class_unregister(&input_class);
 }
 
