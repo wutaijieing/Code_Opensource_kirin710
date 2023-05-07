@@ -24,7 +24,7 @@ then
 	mkdir out
 fi
 
-#输入盘古内核版本号
+#输入Kirin710内核版本号
 printf "Please enter Kirin710 Kernel version number: "
 read v
 echo " "
