@@ -6,5 +6,5 @@ USE zImage NOTE:
 2. If your phone already enable secboot feature, please decrypt or unlock the secboot feature first.
 3. Please make sure your phone software version is same with this release package, if not, please download the match version first.
 
-This kernel package is released for the phone software version Marie-AL00A/TL00/LX1A/LX1M/LX2/LX3A/LX2J/HWV33 9.0.1.121(C00E120R1P16)
+This kernel package is released for the phone software version 2019-03-20
 

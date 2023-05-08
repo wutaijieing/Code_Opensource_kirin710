@@ -1,0 +1,66 @@
+/*
+ * Hisilicon Ltd. SoC
+ *
+ * Copyright (C) 2012-2013 Hisilicon Ltd.
+ * Author: nobody
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * publishhed by the Free Software Foundation.
+ */
+
+	&modem_pinctrl {
+		compatible = "arm,modem_pinctrl";
+			pinctrl-names = "init","default","idle";
+			/*table: gpio_group gpio_pin mux_addr mux_value cfg_addr cfg_value gpio_dir gpio_value*/
+			pinctrl-0 = <
+					 6         6      0x0A4           2        0x0AC      0     0xffff     0xffff
+					 7         1      0x0B0           0        0x0B8      0          1          0
+					 7         2      0x0B4           4        0x0BC      0     0xffff     0xffff
+					 7         3      0x0B8           0        0x0C0      0          1          0
+					 7         4      0x0BC           1        0x0C4      2          0          0
+					10         4      0x11C           1        0x124      0     0xffff     0xffff
+					10         5      0x120           1        0x128      2     0xffff     0xffff
+					10         6      0x124           1        0x12C      0     0xffff     0xffff
+					10         7      0x128           1        0x130      2     0xffff     0xffff
+					11         2      0x134           1        0x13C      0     0xffff     0xffff
+					11         3      0x138           1        0x140      2     0xffff     0xffff
+					11         4      0x13C           1        0x144      0     0xffff     0xffff
+					25         7      0x06C           0        0x094      1          0     0xffff
+					26         0      0x070           0        0x098      2          0     0xffff
+					>;
+			pinctrl-1 = <
+					 6         6      0x0A4           2        0x0AC      0     0xffff     0xffff
+					 7         1      0x0B0           0        0x0B8      0          1     0xffff
+					 7         2      0x0B4           4        0x0BC      0     0xffff     0xffff
+					 7         3      0x0B8           0        0x0C0      0     0xffff     0xffff
+					 7         4      0x0BC           0        0x0C4      2          0     0xffff
+					10         4      0x11C           1        0x124      0     0xffff     0xffff
+					10         5      0x120           1        0x128      2     0xffff     0xffff
+					10         6      0x124           1        0x12C      0     0xffff     0xffff
+					10         7      0x128           1        0x130      2     0xffff     0xffff
+					11         2      0x134           1        0x13C      0     0xffff     0xffff
+					11         3      0x138           1        0x140      2     0xffff     0xffff
+					11         4      0x13C           1        0x144      0     0xffff     0xffff
+					25         7      0x06C           0        0x094      1          0     0xffff
+					26         0      0x070           0        0x098      2          0     0xffff
+					>;
+			pinctrl-2 = <
+					 6         6      0x0A4           2        0x0AC      0     0xffff     0xffff
+					 7         1      0x0B0           0        0x0B8      0          1          0
+					 7         2      0x0B4           4        0x0BC      0     0xffff     0xffff
+					 7         3      0x0B8           0        0x0C0      0     0xffff     0xffff
+					 7         4      0x0BC           0        0x0C4      2          0     0xffff
+					10         4      0x11C           1        0x124      0     0xffff     0xffff
+					10         5      0x120           1        0x128      2     0xffff     0xffff
+					10         6      0x124           1        0x12C      0     0xffff     0xffff
+					10         7      0x128           1        0x130      2     0xffff     0xffff
+					11         2      0x134           1        0x13C      0     0xffff     0xffff
+					11         3      0x138           1        0x140      2     0xffff     0xffff
+					11         4      0x13C           1        0x144      0     0xffff     0xffff
+					25         7      0x06C           0        0x094      1          0     0xffff
+					26         0      0x070           0        0x098      2          0     0xffff
+					>;
+			pinctrl-num   = <14 14 14>;
+			status = "ok";
+	};

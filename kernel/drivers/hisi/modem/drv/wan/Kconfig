@@ -1,9 +1,0 @@
-#
-# Balong ipf configuration
-#
-
-config wan_SUPPORT
-	tristate "wan support"
-	default n
-	help
-	  balong wan driver

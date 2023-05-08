@@ -1,0 +1,9 @@
+build_Kernel.sh
+out
+drivers/kernelsu
+KernelSU
+.vscode
+logs.txt
+*.img
+*.gz
+*.zip
